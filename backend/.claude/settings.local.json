@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mongosh --quiet --eval \"db = db.getSiblingDB\\(''tablemind''\\); db.restaurant_config.drop\\(\\); print\\(''dropped restaurant_config''\\)\")",
+      "Bash(where mongosh:*)",
+      "Bash(where mongo:*)",
+      "Bash(python -c \":*)",
+      "Bash(conda run -n jeemath python -c \":*)",
+      "Bash(\"C:/Users/madan/miniconda3/envs/jeemath/python.exe\" -c \":*)"
+    ]
+  }
+}
