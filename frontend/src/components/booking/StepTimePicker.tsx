@@ -7,9 +7,10 @@ interface Props {
   value: string
   onChange: (t: string) => void
   durationMins?: number
+  prefetchedSlots?: Promise<any> | null
 }
 
-export default function StepTimePicker({ date, partySize, value, onChange, durationMins }: Props) {
+export default function StepTimePicker({ date, partySize, value, onChange, durationMins, prefetchedSlots }: Props) {
   const [slots, setSlots] = useState<{ time: string; available: boolean; reason: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -17,7 +18,8 @@ export default function StepTimePicker({ date, partySize, value, onChange, durat
   useEffect(() => {
     setLoading(true)
     setError(null)
-    fetchAvailability(date, partySize)
+    const request = prefetchedSlots ?? fetchAvailability(date, partySize)
+    request
       .then(data => setSlots(data.slots))
       .catch(() => setError("Failed to load slots"))
       .finally(() => setLoading(false))

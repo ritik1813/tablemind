@@ -1,6 +1,6 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { X } from "lucide-react"
-import { createReservation } from "../../api/client"
+import { createReservation, fetchAvailability } from "../../api/client"
 import StepPartySize from "./StepPartySize"
 import StepDatePicker from "./StepDatePicker"
 import StepTimePicker from "./StepTimePicker"
@@ -31,6 +31,7 @@ export default function BookingWidget({ sessionId, onClose, onSuccess, initialPa
   const [booking, setBooking] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const prefetchedSlots = useRef<Promise<any> | null>(null)
 
   const MAX_ONLINE = 8
   const stepIdx = STEPS.indexOf(step as any)
@@ -115,7 +116,12 @@ export default function BookingWidget({ sessionId, onClose, onSuccess, initialPa
         {step === "date" && (
           <StepDatePicker
             value={selectedDate}
-            onChange={d => { setSelectedDate(d); setSelectedTime(""); next() }}
+            onChange={d => {
+              setSelectedDate(d)
+              setSelectedTime("")
+              prefetchedSlots.current = fetchAvailability(d, partySize)
+              next()
+            }}
             maxAdvanceDays={30}
           />
         )}
@@ -126,6 +132,7 @@ export default function BookingWidget({ sessionId, onClose, onSuccess, initialPa
             value={selectedTime}
             onChange={t => { setSelectedTime(t); next() }}
             durationMins={getDurationHint()}
+            prefetchedSlots={prefetchedSlots.current}
           />
         )}
         {step === "details" && (
