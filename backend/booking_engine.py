@@ -40,6 +40,12 @@ def generate_slots(date_obj, party_size: int, settings: dict) -> list[dict]:
     close_dt = datetime(date_obj.year, date_obj.month, date_obj.day, close_h, close_m)
     last_start = close_dt - timedelta(minutes=duration + buffer_mins)
 
+    # Fetch tables and day's reservations once — avoids N×2 DB queries
+    tables = get_all_tables()
+    day_start = datetime(date_obj.year, date_obj.month, date_obj.day, 0, 0)
+    day_end   = datetime(date_obj.year, date_obj.month, date_obj.day, 23, 59)
+    all_bookings = get_reservations_in_window(day_start, day_end)
+
     slots = []
     current = open_dt
     while current <= last_start:
@@ -51,7 +57,7 @@ def generate_slots(date_obj, party_size: int, settings: dict) -> list[dict]:
             current += timedelta(minutes=interval)
             continue
 
-        result = find_table(party_size, current, effective_end, settings)
+        result = find_table_from_bookings(party_size, current, effective_end, tables, all_bookings)
         slots.append({
             "time": time_str,
             "datetime": current,
@@ -65,6 +71,10 @@ def generate_slots(date_obj, party_size: int, settings: dict) -> list[dict]:
 def find_table(party_size: int, start_dt: datetime, effective_end_dt: datetime, settings: dict) -> dict:
     tables   = get_all_tables()
     bookings = get_reservations_in_window(start_dt, effective_end_dt)
+    return find_table_from_bookings(party_size, start_dt, effective_end_dt, tables, bookings)
+
+def find_table_from_bookings(party_size: int, start_dt: datetime, effective_end_dt: datetime, tables: list, all_bookings: list) -> dict:
+    bookings = [b for b in all_bookings if b.get("start_dt") < effective_end_dt and b.get("effective_end_dt") > start_dt]
     booked_table_ids = set()
     for b in bookings:
         for tid in b.get("table_ids", []):

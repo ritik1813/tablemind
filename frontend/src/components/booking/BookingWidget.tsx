@@ -166,7 +166,7 @@ export default function BookingWidget({ sessionId, onClose, onSuccess, initialPa
         )}
       </div>
 
-      {step !== "confirm" && step !== "success" && step !== "date" && step !== "time" && (
+      {step !== "confirm" && step !== "success" && step !== "time" && (
         <div className="flex items-center gap-3 px-5 pb-5">
           {stepIdx > 0 && (
             <button
