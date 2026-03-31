@@ -87,7 +87,7 @@ async def chat(req: ChatRequest):
             for m in history
         ]
 
-        model    = genai.GenerativeModel("gemini-2.5-flash", system_instruction=system_prompt)
+        model    = genai.GenerativeModel("gemini-2.0-flash", system_instruction=system_prompt)
         response = model.generate_content(gemini_history, stream=True)
 
         full = ""
