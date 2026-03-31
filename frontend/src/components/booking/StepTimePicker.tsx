@@ -1,6 +1,25 @@
 import { useEffect, useState } from "react"
 import { fetchAvailability } from "../../api/client"
 
+type Lang = "en" | "ja"
+
+const T = {
+  en: {
+    error: "Failed to load slots",
+    noAvail: "No availability on this date.",
+    chooseAnother: "Please choose another day.",
+    diningTime: (label: string) => `Dining time ~${label} for your party`,
+    full: "Full"
+  },
+  ja: {
+    error: "空き時間の取得に失敗しました",
+    noAvail: "この日は空きがありません。",
+    chooseAnother: "別の日をお選びください。",
+    diningTime: (label: string) => `お食事時間の目安：約${label}`,
+    full: "満席"
+  }
+}
+
 interface Props {
   date: string
   partySize: number
@@ -8,12 +27,15 @@ interface Props {
   onChange: (t: string) => void
   durationMins?: number
   prefetchedSlots?: Promise<any> | null
+  lang?: Lang
 }
 
-export default function StepTimePicker({ date, partySize, value, onChange, durationMins, prefetchedSlots }: Props) {
+export default function StepTimePicker({ date, partySize, value, onChange, durationMins, prefetchedSlots, lang = "en" }: Props) {
   const [slots, setSlots] = useState<{ time: string; available: boolean; reason: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const t = T[lang]
 
   useEffect(() => {
     setLoading(true)
@@ -21,14 +43,15 @@ export default function StepTimePicker({ date, partySize, value, onChange, durat
     const request = prefetchedSlots ?? fetchAvailability(date, partySize)
     request
       .then(data => setSlots(data.slots))
-      .catch(() => setError("Failed to load slots"))
+      .catch(() => setError(t.error))
       .finally(() => setLoading(false))
   }, [date, partySize])
 
   const availableCount = slots.filter(s => s.available).length
 
-  const formatTime = (t: string) => {
-    const [h, m] = t.split(":").map(Number)
+  const formatTime = (time: string) => {
+    const [h, m] = time.split(":").map(Number)
+    if (lang === "ja") return `${h}:${m.toString().padStart(2, "0")}`
     const ampm = h >= 12 ? "PM" : "AM"
     const h12 = h % 12 || 12
     return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`
@@ -36,7 +59,9 @@ export default function StepTimePicker({ date, partySize, value, onChange, durat
 
   const hrs = durationMins ? Math.floor(durationMins / 60) : null
   const mins = durationMins ? durationMins % 60 : null
-  const durationLabel = hrs ? (mins ? `${hrs}h ${mins}m` : `${hrs}h`) : durationMins ? `${durationMins}m` : null
+  const durationLabel = lang === "ja"
+    ? (hrs ? (mins ? `${hrs}時間${mins}分` : `${hrs}時間`) : durationMins ? `${durationMins}分` : null)
+    : (hrs ? (mins ? `${hrs}h ${mins}m` : `${hrs}h`) : durationMins ? `${durationMins}m` : null)
 
   if (loading) {
     return (
@@ -53,8 +78,8 @@ export default function StepTimePicker({ date, partySize, value, onChange, durat
   if (availableCount === 0) {
     return (
       <div className="text-center py-4">
-        <p className="text-[#888880]">No availability on this date.</p>
-        <p className="text-sm text-[#888880] mt-1">Please choose another day.</p>
+        <p className="text-[#888880]">{t.noAvail}</p>
+        <p className="text-sm text-[#888880] mt-1">{t.chooseAnother}</p>
       </div>
     )
   }
@@ -63,7 +88,7 @@ export default function StepTimePicker({ date, partySize, value, onChange, durat
     <div>
       {durationLabel && (
         <p className="text-xs text-[#888880] text-center mb-3">
-          Dining time ~{durationLabel} for your party
+          {t.diningTime(durationLabel)}
         </p>
       )}
       <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1">
@@ -80,7 +105,7 @@ export default function StepTimePicker({ date, partySize, value, onChange, durat
             `}
           >
             {formatTime(slot.time)}
-            {!slot.available && <span className="block text-xs text-[#555] mt-0.5">Full</span>}
+            {!slot.available && <span className="block text-xs text-[#555] mt-0.5">{t.full}</span>}
           </button>
         ))}
       </div>

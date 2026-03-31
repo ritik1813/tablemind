@@ -156,7 +156,7 @@ export default function ChatInterface() {
   const showQuickReplies = messages.length <= 1
 
   return (
-    <div className="flex flex-col h-screen bg-bg">
+    <div className="flex flex-col h-[100dvh] bg-bg">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-surface">
         <div>
@@ -206,6 +206,7 @@ export default function ChatInterface() {
               onSuccess={handleSuccess}
               initialPartySize={prefill.partySize}
               initialTime={prefill.time}
+              language={language}
             />
           </div>
         )}

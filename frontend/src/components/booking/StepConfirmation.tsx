@@ -1,4 +1,24 @@
 import { format } from "date-fns"
+import { ja as jaLocale } from "date-fns/locale"
+
+type Lang = "en" | "ja"
+
+const T = {
+  en: {
+    labels: { Date: "Date", Time: "Time", Party: "Party", Name: "Name", Contact: "Contact", Note: "Note" },
+    guest: (n: number) => `${n} guest${n !== 1 ? "s" : ""}`,
+    confirm: "Confirm Booking",
+    confirming: "Confirming...",
+    back: "← Go back"
+  },
+  ja: {
+    labels: { Date: "日付", Time: "時間", Party: "人数", Name: "お名前", Contact: "連絡先", Note: "備考" },
+    guest: (n: number) => `${n}名`,
+    confirm: "予約を確定する",
+    confirming: "確定中...",
+    back: "← 戻る"
+  }
+}
 
 interface Props {
   partySize: number
@@ -11,26 +31,30 @@ interface Props {
   onBack: () => void
   loading: boolean
   error: string | null
+  lang?: Lang
 }
 
-export default function StepConfirmation({ partySize, date, time, name, contact, notes, onConfirm, onBack, loading, error }: Props) {
+export default function StepConfirmation({ partySize, date, time, name, contact, notes, onConfirm, onBack, loading, error, lang = "en" }: Props) {
+  const t = T[lang]
   const [year, month, day] = date.split("-").map(Number)
   const dateObj = new Date(year, month - 1, day)
-  const formattedDate = format(dateObj, "EEEE, MMMM d")
+  const formattedDate = lang === "ja"
+    ? format(dateObj, "yyyy年M月d日(E)", { locale: jaLocale })
+    : format(dateObj, "EEEE, MMMM d")
 
   const [h, m] = time.split(":").map(Number)
-  const ampm = h >= 12 ? "PM" : "AM"
-  const h12 = h % 12 || 12
-  const formattedTime = `${h12}:${m.toString().padStart(2, "0")} ${ampm}`
+  const formattedTime = lang === "ja"
+    ? `${h}:${m.toString().padStart(2, "0")}`
+    : (() => { const ampm = h >= 12 ? "PM" : "AM"; const h12 = h % 12 || 12; return `${h12}:${m.toString().padStart(2, "0")} ${ampm}` })()
 
   const rows = [
-    { label: "Date", value: formattedDate },
-    { label: "Time", value: formattedTime },
-    { label: "Party", value: `${partySize} guest${partySize !== 1 ? "s" : ""}` },
-    { label: "Name", value: name },
-    { label: "Contact", value: contact },
-    ...(notes ? [{ label: "Note", value: notes }] : [])
-  ]
+    { key: "Date", value: formattedDate },
+    { key: "Time", value: formattedTime },
+    { key: "Party", value: t.guest(partySize) },
+    { key: "Name", value: name },
+    { key: "Contact", value: contact },
+    ...(notes ? [{ key: "Note", value: notes }] : [])
+  ] as { key: keyof typeof t.labels, value: string }[]
 
   return (
     <div className="space-y-4">
@@ -40,8 +64,8 @@ export default function StepConfirmation({ partySize, date, time, name, contact,
           <span className="font-semibold text-[#F0E8E0]">El Pancho</span>
         </div>
         {rows.map(r => (
-          <div key={r.label} className="flex gap-3">
-            <span className="text-xs text-[#888880] w-16 flex-shrink-0 pt-0.5">{r.label}</span>
+          <div key={r.key} className="flex gap-3">
+            <span className="text-xs text-[#888880] w-16 flex-shrink-0 pt-0.5">{t.labels[r.key]}</span>
             <span className="text-sm text-[#F0E8E0]">{r.value}</span>
           </div>
         ))}
@@ -54,13 +78,13 @@ export default function StepConfirmation({ partySize, date, time, name, contact,
         disabled={loading}
         className="w-full py-3.5 rounded-xl bg-brand text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
       >
-        {loading ? "Confirming..." : "Confirm Booking"}
+        {loading ? t.confirming : t.confirm}
       </button>
       <button
         onClick={onBack}
         className="w-full py-2 text-sm text-[#888880] hover:text-[#F0E8E0] transition-colors"
       >
-        ← Go back
+        {t.back}
       </button>
     </div>
   )

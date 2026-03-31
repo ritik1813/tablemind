@@ -1,6 +1,32 @@
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { format } from "date-fns"
+import { ja as jaLocale } from "date-fns/locale"
+
+type Lang = "en" | "ja"
+
+const T = {
+  en: {
+    confirmed: "Booking Confirmed!",
+    ref: (r: string) => `Ref: ${r}`,
+    labels: { Date: "Date", Time: "Time", Party: "Party", Name: "Name" },
+    guest: (n: number) => `${n} guests`,
+    setup: "Tables will be arranged for your group — please arrive on time.",
+    seeYou: (medium: string) => `We'll see you soon! Check your ${medium} for confirmation.`,
+    email: "email", phone: "phone",
+    backBtn: (c: number) => `Back to chat${c > 0 ? ` (${c})` : ""}`
+  },
+  ja: {
+    confirmed: "ご予約が確定しました！",
+    ref: (r: string) => `予約番号: ${r}`,
+    labels: { Date: "日付", Time: "時間", Party: "人数", Name: "お名前" },
+    guest: (n: number) => `${n}名`,
+    setup: "グループ用にテーブルをご用意します。お時間通りにお越しください。",
+    seeYou: (medium: string) => `ご来店をお待ちしております！${medium}に確認をお送りしました。`,
+    email: "メール", phone: "電話",
+    backBtn: (c: number) => `チャットに戻る${c > 0 ? `（${c}）` : ""}`
+  }
+}
 
 interface Props {
   booking: {
@@ -12,10 +38,12 @@ interface Props {
     needs_setup?: boolean
   }
   onBack: () => void
+  lang?: Lang
 }
 
-export default function BookingSuccess({ booking, onBack }: Props) {
+export default function BookingSuccess({ booking, onBack, lang = "en" }: Props) {
   const [countdown, setCountdown] = useState(3)
+  const t = T[lang]
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -26,13 +54,17 @@ export default function BookingSuccess({ booking, onBack }: Props) {
     }, 1000)
     return () => clearInterval(interval)
   }, [])
+
   const dt = new Date(booking.start_dt)
-  const formattedDate = format(dt, "EEEE, MMMM d")
+  const formattedDate = lang === "ja"
+    ? format(dt, "yyyy年M月d日(E)", { locale: jaLocale })
+    : format(dt, "EEEE, MMMM d")
   const h = dt.getHours()
   const m = dt.getMinutes()
-  const ampm = h >= 12 ? "PM" : "AM"
-  const h12 = h % 12 || 12
-  const formattedTime = `${h12}:${m.toString().padStart(2, "0")} ${ampm}`
+  const formattedTime = lang === "ja"
+    ? `${h}:${m.toString().padStart(2, "0")}`
+    : (() => { const ampm = h >= 12 ? "PM" : "AM"; const h12 = h % 12 || 12; return `${h12}:${m.toString().padStart(2, "0")} ${ampm}` })()
+
   const ref = booking.reservation_id.slice(-8).toUpperCase()
   const isEmail = booking.contact.includes("@")
 
@@ -64,19 +96,19 @@ export default function BookingSuccess({ booking, onBack }: Props) {
       </motion.div>
 
       <div>
-        <h3 className="text-xl font-semibold text-[#F0E8E0]">Booking Confirmed!</h3>
-        <p className="text-xs text-[#888880] mt-1">Ref: {ref}</p>
+        <h3 className="text-xl font-semibold text-[#F0E8E0]">{t.confirmed}</h3>
+        <p className="text-xs text-[#888880] mt-1">{t.ref(ref)}</p>
       </div>
 
       <div className="bg-[#111] rounded-2xl p-4 w-full space-y-2 text-left">
-        {[
-          { label: "Date", value: formattedDate },
-          { label: "Time", value: formattedTime },
-          { label: "Party", value: `${booking.party_size} guests` },
-          { label: "Name", value: booking.name },
-        ].map(r => (
-          <div key={r.label} className="flex gap-3">
-            <span className="text-xs text-[#888880] w-12 flex-shrink-0 pt-0.5">{r.label}</span>
+        {([
+          { key: "Date", value: formattedDate },
+          { key: "Time", value: formattedTime },
+          { key: "Party", value: t.guest(booking.party_size) },
+          { key: "Name", value: booking.name },
+        ] as { key: keyof typeof t.labels, value: string }[]).map(r => (
+          <div key={r.key} className="flex gap-3">
+            <span className="text-xs text-[#888880] w-12 flex-shrink-0 pt-0.5">{t.labels[r.key]}</span>
             <span className="text-sm text-[#F0E8E0]">{r.value}</span>
           </div>
         ))}
@@ -84,19 +116,19 @@ export default function BookingSuccess({ booking, onBack }: Props) {
 
       {booking.needs_setup && (
         <div className="w-full bg-[#1e1400] border border-brand rounded-xl px-4 py-2.5 text-sm text-brand text-left">
-          Tables will be arranged for your group — please arrive on time.
+          {t.setup}
         </div>
       )}
 
       <p className="text-sm text-[#888880]">
-        We'll see you soon! Check your {isEmail ? "email" : "phone"} for confirmation.
+        {t.seeYou(isEmail ? t.email : t.phone)}
       </p>
 
       <button
         onClick={onBack}
         className="w-full py-3 rounded-xl bg-surface border border-border text-sm text-[#F0E8E0] hover:border-brand transition-colors"
       >
-        Back to chat {countdown > 0 && <span className="text-[#888880]">({countdown})</span>}
+        {t.backBtn(countdown)}
       </button>
     </div>
   )

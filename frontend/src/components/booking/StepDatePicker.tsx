@@ -1,12 +1,26 @@
 import { useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
+type Lang = "en" | "ja"
+
+const T = {
+  en: {
+    dayNames: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
+    monthNames: ["January","February","March","April","May","June","July","August","September","October","November","December"]
+  },
+  ja: {
+    dayNames: ["日", "月", "火", "水", "木", "金", "土"],
+    monthNames: ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"]
+  }
+}
+
 interface Props {
   value: string
   onChange: (date: string) => void
   minAdvanceDays?: number
   maxAdvanceDays?: number
   closedDays?: string[]
+  lang?: Lang
 }
 
 export default function StepDatePicker({
@@ -14,7 +28,8 @@ export default function StepDatePicker({
   onChange,
   minAdvanceDays = 0,
   maxAdvanceDays = 30,
-  closedDays = []
+  closedDays = [],
+  lang = "en"
 }: Props) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -22,6 +37,7 @@ export default function StepDatePicker({
   const [viewYear, setViewYear] = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())
 
+  const t = T[lang]
   const minDate = new Date(today)
   minDate.setDate(today.getDate() + minAdvanceDays)
 
@@ -30,9 +46,6 @@ export default function StepDatePicker({
 
   const firstDay = new Date(viewYear, viewMonth, 1).getDay()
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
-
-  const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
-  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"]
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }
@@ -63,19 +76,23 @@ export default function StepDatePicker({
     return `${viewYear}-${m}-${d}`
   }
 
+  const header = lang === "ja"
+    ? `${viewYear}年${t.monthNames[viewMonth]}`
+    : `${t.monthNames[viewMonth]} ${viewYear}`
+
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
         <button onClick={prevMonth} className="p-2 hover:text-brand transition-colors">
           <ChevronLeft size={18} />
         </button>
-        <span className="font-medium text-[#F0E8E0]">{monthNames[viewMonth]} {viewYear}</span>
+        <span className="font-medium text-[#F0E8E0]">{header}</span>
         <button onClick={nextMonth} className="p-2 hover:text-brand transition-colors">
           <ChevronRight size={18} />
         </button>
       </div>
       <div className="grid grid-cols-7 gap-1 mb-2">
-        {dayNames.map(d => (
+        {t.dayNames.map(d => (
           <div key={d} className="text-center text-xs text-[#888880] py-1">{d}</div>
         ))}
       </div>
