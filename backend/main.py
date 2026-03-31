@@ -36,6 +36,10 @@ init_db()
 seed_defaults(RESTAURANT, DEFAULT_BOOKING_SETTINGS, DEFAULT_TABLES)
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
+@app.get("/ping")
+def ping():
+    return {"ok": True}
+
 session_histories: dict[str, list] = {}
 
 def current_config():   return get_restaurant_config() or RESTAURANT
@@ -87,7 +91,7 @@ async def chat(req: ChatRequest):
             for m in history
         ]
 
-        model    = genai.GenerativeModel("gemini-2.0-flash", system_instruction=system_prompt)
+        model    = genai.GenerativeModel("gemini-2.5-flash", system_instruction=system_prompt)
         response = model.generate_content(gemini_history, stream=True)
 
         full = ""

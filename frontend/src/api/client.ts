@@ -1,5 +1,9 @@
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
+export function warmup() {
+  fetch(`${BASE}/ping`).catch(() => {})
+}
+
 export async function streamChat(
   sessionId: string,
   message: string,
